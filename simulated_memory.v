@@ -7,7 +7,7 @@ module simulated_memory
 	inout [15:0] data
 );
 
-	reg [15:0] contents[65536:0];
+	reg [15:0] contents[65535:0];
 	
 	assign data = mem_read ? contents[addr] : 16'bZ;
 	

@@ -1,8 +1,9 @@
 // states
 `define START 0
-`define HALTED 1
+`define IOWAIT 1
 `define DECODE 2
 `define NEXTINSN 3
+`define WAIT 4
 // instructions
 `define NOP 0
 `define SYSCALL 1
@@ -33,15 +34,14 @@
 `define SELIP2_ACC 1
 module controller
 (
-   input clock,
+	input clock,
 	input reset,
 	input [3:0] insn,
-	input accz, 
-	input accn,
+	input accz, // is ACC zero?
+	input accn, // is ACC negative?
+	input iobusy, // are we waiting for IO?
 	output reg mem_read,
 	output reg mem_write,
-	output reg io_read,
-	output reg io_write,
 	output reg ir_write,
 	output reg ip_write,
 	output reg acc_write,
@@ -52,19 +52,18 @@ module controller
 	output reg selip1, // 0 - next, 1 - reg
 	output reg selip2, // 0 - DR, 1 - ACC
 	output reg [1:0] curinsn,
-	output reg [1:0] aluinsn
+	output reg [1:0] aluinsn,
+	output reg runio
 );
 
-   reg [2:0] state;
+	reg [2:0] state;
 
-	always @(negedge clock)
+	always @(posedge clock)
 	begin
 		if(~reset) begin
 			state <= 0;
 			mem_read <= 0;
 			mem_write <= 0;
-			io_read <= 0;
-			io_write <= 0;
 			ir_write <= 0;
 			ip_write <= 0;
 			acc_write <= 0;
@@ -72,28 +71,37 @@ module controller
 			curinsn <= 0;
 			selswap <= 0;
 			doswap <= 0;
+			runio <= 0;
 		end else
-	   case(state)
-		   `START: begin
-			   mem_read <= 1;
+		casez(state)
+			`START: begin
+				mem_read <= 1;
 				ir_write <= 1;
 				seladdr <= `SELADDR_IP;
 				ip_write <= 1;
 				selip1 <= `SELIP1_NEXT;
 				curinsn <= 0;
+				state <= `WAIT;
+			end
+			`IOWAIT: begin 
+				if(~iobusy) begin
+					state <= `NEXTINSN;
+					runio <= 0;
+				end
+			end
+			`WAIT: begin
+				mem_read <= 0;
+				ir_write <= 0;
+				ip_write <= 0;
 				state <= `DECODE;
 			end
-			`HALTED: begin 
-				state <= `HALTED;
-			end
 			`DECODE: begin
-				ip_write <= 0;
-				ir_write <= 0;
-				mem_read <= 0;
-			   case(insn)
-				   `NOP: state <= `NEXTINSN;
+				casez(insn)
+					`NOP: state <= `NEXTINSN;
 					`SYSCALL: begin
-						if(accz) state <= `HALTED;
+						state <= `IOWAIT;
+						runio <= 1;
+						selacc <= `SELACC_IO;
 					end
 					`LOAD: begin
 						mem_read <= 1;
@@ -181,8 +189,6 @@ module controller
 			`NEXTINSN: begin
 			   mem_read <= 0;
 				mem_write <= 0;
-				io_read <= 0;
-				io_write <= 0;
 			   ir_write <= 0;
 				ip_write <= 0;
 				acc_write <= 0;
