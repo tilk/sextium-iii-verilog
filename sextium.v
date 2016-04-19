@@ -113,12 +113,13 @@ module sextium(
 	wire clock, reset;
 	wire mem_read, mem_write, io_read, io_write;
 	wire [15:0] mem_bus, addr_bus;
+	wire [4:0] slowclock;
 	
 //=======================================================
 //  Structural coding
 //=======================================================
 
-	assign clock = CLOCK_50;
+//	assign clock = CLOCK_50;
 	assign reset = KEY[0];
 	assign SRAM_LB_N = 0;
 	assign SRAM_UB_N = 0;
@@ -131,5 +132,7 @@ module sextium(
 
 	sextium_core core(.clock(clock), .reset(reset), .mem_bus(mem_bus), .addr_bus(addr_bus),
 		.mem_read(mem_read), .mem_write(mem_write), .io_read(io_read), .io_write(io_write));
+		
+	slowclock clockgen(.areset(reset), .inclk0(CLOCK_50), .c0(clock));
 
 endmodule

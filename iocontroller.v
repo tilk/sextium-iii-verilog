@@ -20,14 +20,17 @@ module iocontroller
 
 	reg [1:0] state;
 
-	always @(negedge clock)
+	always @(posedge clock)
 	begin
 		if(~reset) begin
 			iobusy <= 1;
 			state <= `ST_DECODE;
+			io_read <= 0;
+			io_write <= 0;
+			acc_write <= 0;
 		end else begin
 			case(state)
-				`ST_DECODE: begin
+				`ST_DECODE: if (runio) begin
 					case(acc)
 						`SYSCALL_HALT: state <= `ST_HALT;
 						`SYSCALL_LOAD: begin
@@ -46,6 +49,7 @@ module iocontroller
 					if (ioack) begin
 						io_read <= 0;
 						io_write <= 0;
+						acc_write <= 0;
 						iobusy <= 0;
 						state <= `ST_WAITREADY;
 					end

@@ -10,16 +10,16 @@ module sextium_testbench;
 	
 	simulated_memory mem(.mem_read(mem_read), .mem_write(mem_write), .addr(addr_bus), .data(mem_bus));
 	
-	//simulated_io io(.io_read(io_read), .io_write(io_write), .ioack(ioack), .data(io_bus));
+	simulated_io io(.reset(reset), .io_read(io_read), .io_write(io_write), .ioack(ioack), .data(io_bus));
 	
 	always begin
-		#20 clock <= ~clock;
+		#80 clock <= ~clock;
 	end
 	
 	initial begin
 		reset = 0;
-		#60 reset = 1;
-		#2500 $stop;
+		#250 reset = 1;
+		#50000 $stop;
 	end
 
 endmodule

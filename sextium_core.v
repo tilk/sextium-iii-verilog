@@ -28,7 +28,7 @@ module sextium_core
 	assign ir_in = mem_bus;
 	
 	assign mem_bus = mem_write ? acc_out : 16'bZ;
-	assign io_bus = io_write ? acc_out : 16'bZ;
+	assign io_bus = io_write ? dr_out : 16'bZ;
 	
 	assign ip_next = ip_out + 16'h1;
 	

@@ -134,6 +134,7 @@ module controller
 							ip_write <= 1;
 							selip1 <= `SELIP1_REG;
 							selip2 <= `SELIP2_AR;
+							curinsn <= 3;
 						end
 						state <= `NEXTINSN;
 					end
@@ -142,6 +143,7 @@ module controller
 							ip_write <= 1;
 							selip1 <= `SELIP1_REG;
 							selip2 <= `SELIP2_AR;
+							curinsn <= 3;
 						end
 						state <= `NEXTINSN;
 					end
@@ -149,6 +151,7 @@ module controller
 						ip_write <= 1;
 						selip1 <= `SELIP1_REG;
 						selip2 <= `SELIP2_ACC;
+						curinsn <= 3;
 						state <= `NEXTINSN;
 					end
 					`CONST: begin

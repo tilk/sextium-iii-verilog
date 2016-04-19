@@ -1,5 +1,5 @@
 module simulated_memory
-#(parameter memdata = "test1.txt")
+#(parameter memdata = "test2.txt")
 (
 	input mem_read,
 	input mem_write,
