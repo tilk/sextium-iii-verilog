@@ -20,7 +20,7 @@
 `define MUL 12
 `define DIV 13
 // constants for multiplexing
-`define SELADDR_IP 0
+`define SELADDR_PC 0
 `define SELADDR_AR 1
 `define SELACC_MEM 0
 `define SELACC_IO 1
@@ -28,10 +28,10 @@
 `define SELACC_ALU 3
 `define SELSWAP_AR 0
 `define SELSWAP_DR 1
-`define SELIP1_NEXT 0
-`define SELIP1_REG 1
-`define SELIP2_AR 0
-`define SELIP2_ACC 1
+`define SELPC1_NEXT 0
+`define SELPC1_REG 1
+`define SELPC2_AR 0
+`define SELPC2_ACC 1
 module controller
 (
 	input clock,
@@ -43,14 +43,14 @@ module controller
 	output reg mem_read,
 	output reg mem_write,
 	output reg ir_write,
-	output reg ip_write,
+	output reg pc_write,
 	output reg acc_write,
-	output reg seladdr, // 0 - IP, 1 - AR
+	output reg seladdr, // 0 - PC, 1 - AR
 	output reg [1:0] selacc,  // 0 - MEM, 1 - IO, 2 - SWAP, 3 - ALU
 	output reg selswap, // 0 - AR, 1 - DR
 	output reg doswap,
-	output reg selip1, // 0 - next, 1 - reg
-	output reg selip2, // 0 - DR, 1 - ACC
+	output reg selpc1, // 0 - next, 1 - reg
+	output reg selpc2, // 0 - DR, 1 - ACC
 	output reg [1:0] curinsn,
 	output reg [1:0] aluinsn,
 	output reg runio
@@ -65,7 +65,7 @@ module controller
 			mem_read <= 0;
 			mem_write <= 0;
 			ir_write <= 0;
-			ip_write <= 0;
+			pc_write <= 0;
 			acc_write <= 0;
 			seladdr <= 0;
 			curinsn <= 0;
@@ -77,9 +77,9 @@ module controller
 			`START: begin
 				mem_read <= 1;
 				ir_write <= 1;
-				seladdr <= `SELADDR_IP;
-				ip_write <= 1;
-				selip1 <= `SELIP1_NEXT;
+				seladdr <= `SELADDR_PC;
+				pc_write <= 1;
+				selpc1 <= `SELPC1_NEXT;
 				curinsn <= 0;
 				state <= `WAIT;
 			end
@@ -92,7 +92,7 @@ module controller
 			`WAIT: begin
 				mem_read <= 0;
 				ir_write <= 0;
-				ip_write <= 0;
+				pc_write <= 0;
 				state <= `DECODE;
 			end
 			`DECODE: begin
@@ -131,26 +131,26 @@ module controller
 					end
 					`BRANCHZ: begin
 						if(accz) begin
-							ip_write <= 1;
-							selip1 <= `SELIP1_REG;
-							selip2 <= `SELIP2_AR;
+							pc_write <= 1;
+							selpc1 <= `SELPC1_REG;
+							selpc2 <= `SELPC2_AR;
 							curinsn <= 3;
 						end
 						state <= `NEXTINSN;
 					end
 					`BRANCHN: begin
 						if(accn) begin
-							ip_write <= 1;
-							selip1 <= `SELIP1_REG;
-							selip2 <= `SELIP2_AR;
+							pc_write <= 1;
+							selpc1 <= `SELPC1_REG;
+							selpc2 <= `SELPC2_AR;
 							curinsn <= 3;
 						end
 						state <= `NEXTINSN;
 					end
 					`JUMP: begin
-						ip_write <= 1;
-						selip1 <= `SELIP1_REG;
-						selip2 <= `SELIP2_ACC;
+						pc_write <= 1;
+						selpc1 <= `SELPC1_REG;
+						selpc2 <= `SELPC2_ACC;
 						curinsn <= 3;
 						state <= `NEXTINSN;
 					end
@@ -158,9 +158,9 @@ module controller
 						mem_read <= 1;
 						acc_write <= 1;
 						selacc <= `SELACC_MEM;
-						seladdr <= `SELADDR_IP;
-						ip_write <= 1;
-						selip1 <= `SELIP1_NEXT;
+						seladdr <= `SELADDR_PC;
+						pc_write <= 1;
+						selpc1 <= `SELPC1_NEXT;
 						state <= `NEXTINSN;
 					end
 					`ADD: begin
@@ -193,7 +193,7 @@ module controller
 			   mem_read <= 0;
 				mem_write <= 0;
 			   ir_write <= 0;
-				ip_write <= 0;
+				pc_write <= 0;
 				acc_write <= 0;
 				doswap <= 0;
 			   if (curinsn == 3) begin
