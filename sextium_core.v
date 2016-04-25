@@ -3,13 +3,17 @@ module sextium_core
    input clock,
    input reset,
 	input ioack,
-   inout [15:0] io_bus,
-   inout [15:0] mem_bus,
+   input [15:0] io_bus_in,
+   input [15:0] mem_bus_in,
+   output [15:0] io_bus_out,
+   output [15:0] mem_bus_out,
    output [15:0] addr_bus,
 	output mem_read,
 	output mem_write,
 	output io_read,
-	output io_write
+	output io_write,
+	// for visualization
+	output [3:0] insn
 );
 
 	wire acc_write, io_acc_write, ar_write, dr_write, ir_write, pc_write;
@@ -17,19 +21,19 @@ module sextium_core
 	wire [15:0] pc_next, pc_src;
 	wire accz, accn, runio, iobusy;
 
-	wire [3:0] insn;
 	wire seladdr, selswap, doswap, selpc1, selpc2;
 	wire [1:0] selacc;
 	wire [1:0] curinsn;
 	wire [1:0] aluinsn;
+	wire diven;
 	
 	assign ar_in = acc_out;
 	assign dr_in = acc_out;
-	assign ir_in = mem_bus;
+	assign ir_in = mem_bus_in;
 	
-	assign mem_bus = mem_write ? acc_out : 16'bZ;
-	assign io_bus = io_write ? dr_out : 16'bZ;
-	
+	assign mem_bus_out = acc_out;
+	assign io_bus_out = dr_out;
+		
 	assign pc_next = pc_out + 16'h1;
 	
 	assign accz = acc_out == 16'h0;
@@ -44,7 +48,7 @@ module sextium_core
 	controller sextium_controller(.clock(clock), .reset(reset), .insn(insn), .accz(accz), .accn(accn), .iobusy(iobusy),
 		.mem_read(mem_read), .mem_write(mem_write), .ir_write(ir_write), .pc_write(pc_write), .acc_write(acc_write),
 		.seladdr(seladdr), .selacc(selacc), .selswap(selswap), .doswap(doswap), .selpc1(selpc1), .selpc2(selpc2), 
-		.curinsn(curinsn), .aluinsn(aluinsn), .runio(runio));
+		.curinsn(curinsn), .aluinsn(aluinsn), .runio(runio), .diven(diven));
 	
 	iocontroller sextium_iocontroller(.clock(clock), .reset(reset), .runio(runio), .acc(acc_out), .ioack(ioack),
 		.iobusy(iobusy), .io_read(io_read), .io_write(io_write), .acc_write(io_acc_write));
@@ -59,10 +63,10 @@ module sextium_core
 	
 	mux2#(16) swap_mux(.sel(selswap), .in1(ar_out), .in2(dr_out), .out(swap_out));
 	
-	mux4#(16) acc_mux(.sel(selacc), .in1(mem_bus), .in2(io_bus), .in3(swap_out), .in4(alu_out), .out(acc_in));
+	mux4#(16) acc_mux(.sel(selacc), .in1(mem_bus_in), .in2(io_bus_in), .in3(swap_out), .in4(alu_out), .out(acc_in));
 	
 	demux1to#(1) swap_demux(.sel(selswap), .in(doswap), .out({ar_write, dr_write}));
 	
-	alu sextium_alu(.dataa(acc_out), .datab(dr_out), .s(aluinsn), .result(alu_out));
+	alu sextium_alu(.diven(diven), .clock(clock), .dataa(acc_out), .datab(dr_out), .s(aluinsn), .result(alu_out));
 
 endmodule

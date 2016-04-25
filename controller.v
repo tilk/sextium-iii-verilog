@@ -4,6 +4,7 @@
 `define DECODE 2
 `define NEXTINSN 3
 `define WAIT 4
+`define DIVWAIT 5
 // instructions
 `define NOP 0
 `define SYSCALL 1
@@ -53,10 +54,12 @@ module controller
 	output reg selpc2, // 0 - DR, 1 - ACC
 	output reg [1:0] curinsn,
 	output reg [1:0] aluinsn,
-	output reg runio
+	output reg runio,
+	output reg diven
 );
 
 	reg [2:0] state;
+	reg [4:0] delay;
 
 	always @(posedge clock)
 	begin
@@ -72,6 +75,7 @@ module controller
 			selswap <= 0;
 			doswap <= 0;
 			runio <= 0;
+			diven <= 0;
 		end else
 		casez(state)
 			`START: begin
@@ -183,11 +187,21 @@ module controller
 					end
 					`DIV: begin
 					   aluinsn <= 3;
-						acc_write <= 1;
+						diven <= 1;
+						delay <= 4'b1111;
 						selacc <= `SELACC_ALU;
-						state <= `NEXTINSN;
+						state <= `DIVWAIT;
 					end
 				endcase
+			end
+			`DIVWAIT: begin
+				if(delay[0] == 0) begin
+					acc_write <= 1;
+					diven <= 0;
+					state <= `NEXTINSN;
+				end else begin
+					delay <= delay >> 1;
+				end
 			end
 			`NEXTINSN: begin
 			   mem_read <= 0;

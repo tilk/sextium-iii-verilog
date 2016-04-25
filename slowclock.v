@@ -104,7 +104,7 @@ module slowclock (
 				.vcounderrange ());
 	defparam
 		altpll_component.bandwidth_type = "AUTO",
-		altpll_component.clk0_divide_by = 4,
+		altpll_component.clk0_divide_by = 1,
 		altpll_component.clk0_duty_cycle = 50,
 		altpll_component.clk0_multiply_by = 1,
 		altpll_component.clk0_phase_shift = "0",

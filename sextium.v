@@ -111,9 +111,14 @@ module sextium(
 //=======================================================
 
 	wire clock, reset;
-	wire mem_read, mem_write, io_read, io_write;
-	wire [15:0] mem_bus, addr_bus;
-	wire [4:0] slowclock;
+	wire mem_read, mem_write, io_read, io_write, io_mem_write, ioack;
+	wire [15:0] mem_bus_in, mem_bus_out, io_bus_in, io_bus_out, addr_bus;
+	wire [3:0] insn;
+//	wire slowclock;
+//	wire soft_reset;
+
+	wire to_uart_data, to_uart_error, to_uart_valid, to_uart_ready, from_uart_data, from_uart_error, from_uart_valid,	from_uart_ready;
+
 	
 //=======================================================
 //  Structural coding
@@ -121,18 +126,46 @@ module sextium(
 
 //	assign clock = CLOCK_50;
 	assign reset = KEY[0];
+	assign stepclock = KEY[1];
+	assign selclock = SW[17];
 	assign SRAM_LB_N = 0;
 	assign SRAM_UB_N = 0;
 	assign SRAM_CE_N = 0;
 	assign SRAM_OE_N = ~mem_read;
-	assign SRAM_WE_N = ~mem_write;
-	assign SRAM_DQ = mem_bus;
+	assign SRAM_WE_N = ~(mem_write | io_mem_write);
+	assign SRAM_DQ = mem_write ? (io_mem_write ? io_bus_out : mem_bus_out) : 16'bZ; // TODO an actual memory controller is needed
 	assign SRAM_ADDR[15:0] = addr_bus;
 	assign SRAM_ADDR[19:16] = 0;
+	assign LEDG[0] = mem_read;
+	assign LEDG[1] = mem_write;
+	assign LEDG[2] = io_read;
+	assign LEDG[3] = io_write;
 
-	sextium_core core(.clock(clock), .reset(reset), .mem_bus(mem_bus), .addr_bus(addr_bus),
-		.mem_read(mem_read), .mem_write(mem_write), .io_read(io_read), .io_write(io_write));
-		
-	slowclock clockgen(.areset(reset), .inclk0(CLOCK_50), .c0(clock));
+	assign mem_bus_in = SRAM_DQ;
 
+	assign slowclock = CLOCK_50;
+	
+	sextium_core core(.clock(clock), .reset(reset), .mem_bus_in(mem_bus_in), .mem_bus_out(mem_bus_out), .addr_bus(addr_bus),
+		.io_bus_in(io_bus_in), .io_bus_out(io_bus_out),
+		.mem_read(mem_read), .mem_write(mem_write), .io_read(io_read), .io_write(io_write), .ioack(ioack),
+		.insn(insn));
+	
+//	sextium_io_uart io_uart(.clock(clock), .reset(reset), .io_bus_in(io_bus_out), .io_bus_out(io_bus_in), .io_read(io_read), .io_write(io_write), .ioack(ioack),
+//		.from_uart_ready(from_uart_ready), .to_uart_data(to_uart_data), .to_uart_error(to_uart_error), .to_uart_valid(to_uart_valid),
+//		.to_uart_ready(to_uart_ready), .from_uart_data(from_uart_data), .from_uart_error(from_uart_error), .from_uart_valid(from_uart_valid),
+//		.soft_reset(soft_reset), .io_mem_write(io_mem_write));
+	
+//	slowclock clockgen(.areset(1), .inclk0(CLOCK_50), .c0(slowclock));
+
+//	rs232_uart uart(.clk(CLOCK_50), .reset(reset), .UART_RXD(UART_RXD), .UART_TXD(UART_TXD),
+//		.from_uart_ready(from_uart_ready), .to_uart_data(to_uart_data), .to_uart_error(to_uart_error), .to_uart_valid(to_uart_valid),
+//		.to_uart_ready(to_uart_ready), .from_uart_data(from_uart_data), .from_uart_error(from_uart_error), .from_uart_valid(from_uart_valid));
+	
+////	segment7_hex_decoder insn_s7(.oe(1), .hex(insn), .out(HEX0));
+	
+	segment7_hex_decoder_x4 addr_s7(.oe(1), .hex(addr_bus), .out1(HEX2), .out2(HEX3), .out3(HEX4), .out4(HEX5));
+
+	assign clock = slowclock;
+	//mux2#(1) clockmux(.sel(selclock), .in1(slowclock), .in2(stepclock), .out(clock));
+	
 endmodule
