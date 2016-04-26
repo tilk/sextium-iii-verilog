@@ -59,7 +59,7 @@ module controller
 );
 
 	reg [2:0] state;
-	reg [4:0] delay;
+	reg [2:0] delay;
 
 	always @(posedge clock)
 	begin
@@ -75,7 +75,7 @@ module controller
 			selswap <= 0;
 			doswap <= 0;
 			runio <= 0;
-			diven <= 0;
+			diven <= 1; // TODO
 		end else
 		casez(state)
 			`START: begin
@@ -187,8 +187,7 @@ module controller
 					end
 					`DIV: begin
 					   aluinsn <= 3;
-						diven <= 1;
-						delay <= 4'b1111;
+						delay <= 3'b111;
 						selacc <= `SELACC_ALU;
 						state <= `DIVWAIT;
 					end
@@ -197,7 +196,6 @@ module controller
 			`DIVWAIT: begin
 				if(delay[0] == 0) begin
 					acc_write <= 1;
-					diven <= 0;
 					state <= `NEXTINSN;
 				end else begin
 					delay <= delay >> 1;

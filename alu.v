@@ -9,9 +9,9 @@ module alu
 	output reg [WIDTH-1:0] result
 );
 
-	wire qu;
+	wire [WIDTH-1:0] qu, re;
 
-	divider divcircuit(.clock(clock), .clken(diven), .numer(dataa), .denom(datab), .quotient(qu));
+	divider divcircuit(.clock(clock), .clken(diven), .numer(datab), .denom(dataa), .quotient(qu), .remain(re));
 
 	always @(*)
 	begin
