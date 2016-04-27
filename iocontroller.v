@@ -19,7 +19,7 @@ module iocontroller
 );
 
 	reg [1:0] state;
-
+	
 	always @(posedge clock)
 	begin
 		if(~reset) begin

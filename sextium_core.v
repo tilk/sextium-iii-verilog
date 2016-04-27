@@ -3,6 +3,7 @@ module sextium_core
    input clock,
    input reset,
 	input ioack,
+	input mem_ack,
    input [15:0] io_bus_in,
    input [15:0] mem_bus_in,
    output [15:0] io_bus_out,
@@ -48,7 +49,7 @@ module sextium_core
 	controller sextium_controller(.clock(clock), .reset(reset), .insn(insn), .accz(accz), .accn(accn), .iobusy(iobusy),
 		.mem_read(mem_read), .mem_write(mem_write), .ir_write(ir_write), .pc_write(pc_write), .acc_write(acc_write),
 		.seladdr(seladdr), .selacc(selacc), .selswap(selswap), .doswap(doswap), .selpc1(selpc1), .selpc2(selpc2), 
-		.curinsn(curinsn), .aluinsn(aluinsn), .runio(runio), .diven(diven));
+		.curinsn(curinsn), .aluinsn(aluinsn), .runio(runio), .diven(diven), .mem_ack(mem_ack));
 	
 	iocontroller sextium_iocontroller(.clock(clock), .reset(reset), .runio(runio), .acc(acc_out), .ioack(ioack),
 		.iobusy(iobusy), .io_read(io_read), .io_write(io_write), .acc_write(io_acc_write));

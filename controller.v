@@ -40,6 +40,7 @@ module controller
 	input accz, // is ACC zero?
 	input accn, // is ACC negative?
 	input iobusy, // are we waiting for IO?
+	input mem_ack,
 	output reg mem_read,
 	output reg mem_write,
 	output reg ir_write,
@@ -57,7 +58,7 @@ module controller
 	output reg diven
 );
 
-	reg [2:0] state;
+	reg [2:0] state; //, nextstate;
 	reg [2:0] delay;
 
 	// accumulator logic
@@ -169,6 +170,24 @@ module controller
 		endcase
 	end
 	
+	// nextstate logic
+/*	always @(*)
+	begin
+		casez(state)
+			`START: if(mem_ack) nextstate = `DECODE; else nextstate = `START;
+			`IOWAIT: if(iobusy) nextstate = `IOWAIT; else if (curinsn == 0) nextstate = `START; else nextstate = `DECODE;
+			`DIVWAIT: if(delay[0] != 0) nextstate = `DIVWAIT; else if (curinsn == 0) nextstate = `START; else nextstate = `DECODE;
+			`DECODE: begin
+				if (curinsn == 3) nextstate = `START;
+				else nextstate = `DECODE;
+				casez(insn)
+					`SYSCALL: nextstate = `IOWAIT;
+					
+				endcase
+			end
+		endcase
+	end*/
+	
 	always @(posedge clock)
 	begin
 		if(~reset) begin
@@ -179,7 +198,7 @@ module controller
 		casez(state)
 			`START: begin
 				curinsn <= 0;
-				state <= `DECODE;
+				if (mem_ack) state <= `DECODE;
 			end
 			`IOWAIT: begin 
 				if(~iobusy) begin
@@ -193,6 +212,8 @@ module controller
 				curinsn <= curinsn + 2'b1;
 				casez(insn)
 					`SYSCALL: state <= `IOWAIT;
+					`LOAD: if(~mem_ack) begin curinsn <= curinsn; state <= `DECODE; end
+					`STORE: if(~mem_ack) begin curinsn <= curinsn; state <= `DECODE; end
 					`BRANCHZ: if(accz) begin curinsn <= 0; state <= `START; end
 					`BRANCHN: if(accn) begin curinsn <= 0; state <= `START; end
 					`JUMP: begin curinsn <= 0; state <= `START; end
