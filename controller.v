@@ -183,16 +183,19 @@ module controller
 			end
 			`IOWAIT: begin 
 				if(~iobusy) begin
-					state <= `NEXTINSN;
+					if(curinsn == 0) state <= `START;
+					else state <= `DECODE;
 				end
 			end
 			`DECODE: begin
-				state <= `NEXTINSN;
+				if(curinsn == 3) state <= `START;
+				else state <= `DECODE;
+				curinsn <= curinsn + 2'b1;
 				casez(insn)
 					`SYSCALL: state <= `IOWAIT;
-					`BRANCHZ: if(accz) curinsn <= 3;
-					`BRANCHN: if(accn) curinsn <= 3;
-					`JUMP: curinsn <= 3;
+					`BRANCHZ: if(accz) begin curinsn <= 0; state <= `START; end
+					`BRANCHN: if(accn) begin curinsn <= 0; state <= `START; end
+					`JUMP: begin curinsn <= 0; state <= `START; end
 					`DIV: begin
 						delay <= 3'b111;
 						state <= `DIVWAIT;
@@ -201,16 +204,11 @@ module controller
 			end
 			`DIVWAIT: begin
 				if(delay[0] == 0) begin
-					state <= `NEXTINSN;
+					if(curinsn == 0) state <= `START;
+					else state <= `DECODE;
 				end else begin
 					delay <= delay >> 1;
 				end
-			end
-			`NEXTINSN: begin
-			   if (curinsn == 3) begin
-				    state <= `START;
-				end else state <= `DECODE;
-			   curinsn <= curinsn + 2'b1;
 			end
 		endcase
 	end
