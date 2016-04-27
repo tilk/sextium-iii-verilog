@@ -3,7 +3,6 @@
 `define IOWAIT 1
 `define DECODE 2
 `define NEXTINSN 3
-`define WAIT 4
 `define DIVWAIT 5
 // instructions
 `define NOP 0
@@ -61,153 +60,153 @@ module controller
 	reg [2:0] state;
 	reg [2:0] delay;
 
+	// accumulator logic
+	always @(*)
+	begin
+		selacc = `SELACC_MEM;
+		acc_write = 0;
+		casez(state)
+			`IOWAIT: selacc = `SELACC_IO;
+			`DIVWAIT: begin selacc = `SELACC_ALU; if(delay[0] == 0) acc_write = 1; end 
+			`DECODE:
+				casez(insn)
+					`SYSCALL: selacc = `SELACC_IO;
+					`LOAD: begin selacc = `SELACC_MEM; acc_write = 1; end
+					`SWAPA: begin selacc = `SELACC_SWAP; acc_write = 1; end
+					`SWAPD: begin selacc = `SELACC_SWAP; acc_write = 1; end
+					`CONST: begin selacc = `SELACC_MEM; acc_write = 1; end
+					`ADD: begin selacc = `SELACC_ALU; acc_write = 1; end
+					`SUB: begin selacc = `SELACC_ALU; acc_write = 1; end
+					`MUL: begin selacc = `SELACC_ALU; acc_write = 1; end
+					`DIV: selacc = `SELACC_ALU;
+				endcase
+		endcase
+	end
+	
+	// swap logic
+	always @(*)
+	begin
+		selswap = `SELSWAP_AR;
+		doswap = 0;
+		casez(state)
+			`DECODE:
+				casez(insn)
+					`SWAPA: begin selswap = `SELSWAP_AR; doswap = 1; end
+					`SWAPD: begin selswap = `SELSWAP_DR; doswap = 1; end
+				endcase
+		endcase
+	end
+	
+	// IR logic
+	always @(*)
+	begin
+		ir_write = 0;
+		casez(state)
+			`START: ir_write = 1;
+		endcase
+	end
+	
+	// memory logic
+	always @(*)
+	begin
+		mem_read = 0;
+		mem_write = 0;
+		seladdr = `SELADDR_PC;
+		casez(state)
+			`START: begin mem_read = 1; seladdr = `SELADDR_PC; end
+			`DECODE:
+				casez(insn)
+					`LOAD: begin mem_read = 1; seladdr = `SELADDR_AR; end
+					`STORE: begin mem_write <= 1; seladdr <= `SELADDR_AR; end
+					`CONST: begin mem_read = 1; seladdr = `SELADDR_PC; end
+				endcase
+		endcase
+	end
+	
+	// ALU logic
+	always @(*)
+	begin
+		aluinsn = 0;
+		casez(state)
+			`DIVWAIT: aluinsn = 3;
+			`DECODE:
+				casez(insn)
+					`ADD: aluinsn = 0;
+					`SUB: aluinsn = 1;
+					`MUL: aluinsn = 2;
+					`DIV: aluinsn = 3;
+				endcase
+		endcase
+	end
+	
+	// PC logic
+	always @(*)
+	begin
+		selpc1 = `SELPC1_NEXT;
+		pc_write = 0;
+		casez(state)
+			`START: begin pc_write = 1; selpc1 = `SELPC1_NEXT; end
+			`DECODE:
+				casez(insn)
+					`BRANCHZ: if (accz) begin pc_write = 1; selpc1 = `SELPC1_REG; selpc2 = `SELPC2_AR; end
+					`BRANCHN: if (accn) begin pc_write = 1; selpc1 = `SELPC1_REG; selpc2 = `SELPC2_AR; end
+					`JUMP: begin pc_write = 1; selpc1 = `SELPC1_REG; selpc2 = `SELPC2_ACC; end
+					`CONST: begin pc_write = 1; selpc1 = `SELPC1_NEXT; end
+				endcase
+		endcase
+	end
+	
+	// IO logic
+	always @(*)
+	begin
+		runio = 0;
+		casez(state)
+			`IOWAIT: if (iobusy) runio = 1;
+			`DECODE: 
+				casez(insn)
+					`SYSCALL: runio = 1;
+				endcase
+		endcase
+	end
+	
 	always @(posedge clock)
 	begin
 		if(~reset) begin
 			state <= 0;
-			mem_read <= 0;
-			mem_write <= 0;
-			ir_write <= 0;
-			pc_write <= 0;
-			acc_write <= 0;
-			seladdr <= 0;
 			curinsn <= 0;
-			selswap <= 0;
-			doswap <= 0;
-			runio <= 0;
 			diven <= 1; // TODO
 		end else
 		casez(state)
 			`START: begin
-				mem_read <= 1;
-				ir_write <= 1;
-				seladdr <= `SELADDR_PC;
-				pc_write <= 1;
-				selpc1 <= `SELPC1_NEXT;
 				curinsn <= 0;
-				state <= `WAIT;
+				state <= `DECODE;
 			end
 			`IOWAIT: begin 
 				if(~iobusy) begin
 					state <= `NEXTINSN;
-					runio <= 0;
 				end
 			end
-			`WAIT: begin
-				mem_read <= 0;
-				ir_write <= 0;
-				pc_write <= 0;
-				state <= `DECODE;
-			end
 			`DECODE: begin
+				state <= `NEXTINSN;
 				casez(insn)
-					`NOP: state <= `NEXTINSN;
-					`SYSCALL: begin
-						state <= `IOWAIT;
-						runio <= 1;
-						selacc <= `SELACC_IO;
-					end
-					`LOAD: begin
-						mem_read <= 1;
-					   acc_write <= 1;
-						selacc <= `SELACC_MEM;
-						seladdr <= `SELADDR_AR;
-						state <= `NEXTINSN;
-					end
-					`STORE: begin
-						mem_write <= 1;
-						seladdr <= `SELADDR_AR;
-						state <= `NEXTINSN;
-					end
-					`SWAPA: begin
-						acc_write <= 1;
-						selacc <= `SELACC_SWAP;
-						selswap <= `SELSWAP_AR;
-						doswap <= 1;
-						state <= `NEXTINSN;
-					end
-					`SWAPD: begin
-						acc_write <= 1;
-						selacc <= `SELACC_SWAP;
-						selswap <= `SELSWAP_DR;
-						doswap <= 1;
-						state <= `NEXTINSN;
-					end
-					`BRANCHZ: begin
-						if(accz) begin
-							pc_write <= 1;
-							selpc1 <= `SELPC1_REG;
-							selpc2 <= `SELPC2_AR;
-							curinsn <= 3;
-						end
-						state <= `NEXTINSN;
-					end
-					`BRANCHN: begin
-						if(accn) begin
-							pc_write <= 1;
-							selpc1 <= `SELPC1_REG;
-							selpc2 <= `SELPC2_AR;
-							curinsn <= 3;
-						end
-						state <= `NEXTINSN;
-					end
-					`JUMP: begin
-						pc_write <= 1;
-						selpc1 <= `SELPC1_REG;
-						selpc2 <= `SELPC2_ACC;
-						curinsn <= 3;
-						state <= `NEXTINSN;
-					end
-					`CONST: begin
-						mem_read <= 1;
-						acc_write <= 1;
-						selacc <= `SELACC_MEM;
-						seladdr <= `SELADDR_PC;
-						pc_write <= 1;
-						selpc1 <= `SELPC1_NEXT;
-						state <= `NEXTINSN;
-					end
-					`ADD: begin
-					   aluinsn <= 0;
-						acc_write <= 1;
-						selacc <= `SELACC_ALU;
-						state <= `NEXTINSN;
-					end
-					`SUB: begin
-					   aluinsn <= 1;
-						acc_write <= 1;
-						selacc <= `SELACC_ALU;
-						state <= `NEXTINSN;
-					end
-					`MUL: begin
-					   aluinsn <= 2;
-						acc_write <= 1;
-						selacc <= `SELACC_ALU;
-						state <= `NEXTINSN;
-					end
+					`SYSCALL: state <= `IOWAIT;
+					`BRANCHZ: if(accz) curinsn <= 3;
+					`BRANCHN: if(accn) curinsn <= 3;
+					`JUMP: curinsn <= 3;
 					`DIV: begin
-					   aluinsn <= 3;
 						delay <= 3'b111;
-						selacc <= `SELACC_ALU;
 						state <= `DIVWAIT;
 					end
 				endcase
 			end
 			`DIVWAIT: begin
 				if(delay[0] == 0) begin
-					acc_write <= 1;
 					state <= `NEXTINSN;
 				end else begin
 					delay <= delay >> 1;
 				end
 			end
 			`NEXTINSN: begin
-			   mem_read <= 0;
-				mem_write <= 0;
-			   ir_write <= 0;
-				pc_write <= 0;
-				acc_write <= 0;
-				doswap <= 0;
 			   if (curinsn == 3) begin
 				    state <= `START;
 				end else state <= `DECODE;
