@@ -8,7 +8,7 @@ module register
 	output reg [WIDTH-1:0] outdata
 );
 
-	always @(posedge clock)
+	always @(posedge clock or negedge reset)
 	begin
 		if (~reset)
 			outdata <= 0;

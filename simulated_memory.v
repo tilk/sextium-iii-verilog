@@ -1,27 +1,30 @@
+`timescale 1 ns / 1 ns
 module simulated_memory
 #(parameter memdata = "test2.txt")
 (
-	input clock,
 	input read,
 	input write,
 	input [15:0] addr,
 	input [15:0] data_out,
-	output reg [15:0] data_in,
-	output reg ack
+	output [15:0] data_in,
+	output ack
 );
 
 	reg [15:0] contents[65535:0];
+	wire dread;
+	
+	assign data_in = dread ? contents[addr] : 16'bX;
+	
+	assign #5 dread = read;
+	assign #5 ack = read | write;
 	
 	initial begin
 		$readmemh(memdata, contents);
 	end
 	
-	always @(posedge clock)
+	always @(posedge write)
 	begin
-		ack <= 1;
-		if (write) contents[addr] <= data_out;
-		else if (read) data_in <= contents[addr];
-		else ack <= 0;
+		if (write) contents[addr] <= #5 data_out;
 	end
 	
 endmodule

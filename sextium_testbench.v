@@ -13,7 +13,7 @@ module sextium_testbench;
 		.mem_bus_in(mem_bus_in), .mem_bus_out(mem_bus_out), .addr_bus(addr_bus), .mem_ack(mem_ack),
 		.mem_read(mem_read), .mem_write(mem_write), .io_read(io_read), .io_write(io_write));
 	
-	simulated_memory mem(.clock(clock), .read(mem_read), .write(mem_write), .addr(addr_bus), 
+	simulated_memory mem(.read(mem_read), .write(mem_write), .addr(addr_bus), 
 		.data_in(mem_bus_in), .data_out(mem_bus_out), .ack(mem_ack));
 	
 	simulated_io io(.reset(reset), .io_read(io_read), .io_write(io_write), .ioack(ioack), .data(io_bus));

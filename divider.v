@@ -69,7 +69,7 @@ module divider (
 		LPM_DIVIDE_component.lpm_drepresentation = "SIGNED",
 		LPM_DIVIDE_component.lpm_hint = "LPM_REMAINDERPOSITIVE=TRUE",
 		LPM_DIVIDE_component.lpm_nrepresentation = "SIGNED",
-		LPM_DIVIDE_component.lpm_pipeline = 4,
+		LPM_DIVIDE_component.lpm_pipeline = 5,
 		LPM_DIVIDE_component.lpm_type = "LPM_DIVIDE",
 		LPM_DIVIDE_component.lpm_widthd = 16,
 		LPM_DIVIDE_component.lpm_widthn = 16;

@@ -2,23 +2,22 @@
 `define START 0
 `define IOWAIT 1
 `define DECODE 2
-`define NEXTINSN 3
-`define DIVWAIT 5
+`define DIVWAIT 3
 // instructions
-`define NOP 0
-`define SYSCALL 1
-`define LOAD 2
-`define STORE 3
-`define SWAPA 4
-`define SWAPD 5
-`define BRANCHZ 6
-`define BRANCHN 7
-`define JUMP 8
-`define CONST 9
-`define ADD 10
-`define SUB 11
-`define MUL 12
-`define DIV 13
+`define NOP 4'd0
+`define SYSCALL 4'd1
+`define LOAD 4'd2
+`define STORE 4'd3
+`define SWAPA 4'd4
+`define SWAPD 4'd5
+`define BRANCHZ 4'd6
+`define BRANCHN 4'd7
+`define JUMP 4'd8
+`define CONST 4'd9
+`define ADD 4'd10
+`define SUB 4'd11
+`define MUL 4'd12
+`define DIV 4'd13
 // constants for multiplexing
 `define SELADDR_PC 0
 `define SELADDR_AR 1
@@ -55,16 +54,22 @@ module controller
 	output reg [1:0] curinsn,
 	output reg [1:0] aluinsn,
 	output reg runio,
-	output reg diven
+	output reg diven,
+	// for visualization
+	output [1:0] stateout
 );
 
-	reg [2:0] state; //, nextstate;
+	reg [1:0] state;
+	
+	assign stateout = state;
+
 	reg [2:0] delay;
+	reg cycwait;
 
 	// accumulator logic
 	always @(*)
 	begin
-		selacc = `SELACC_MEM;
+		selacc = 1'bX;
 		acc_write = 0;
 		casez(state)
 			`IOWAIT: selacc = `SELACC_IO;
@@ -87,7 +92,7 @@ module controller
 	// swap logic
 	always @(*)
 	begin
-		selswap = `SELSWAP_AR;
+		selswap = 1'bX;
 		doswap = 0;
 		casez(state)
 			`DECODE:
@@ -112,7 +117,7 @@ module controller
 	begin
 		mem_read = 0;
 		mem_write = 0;
-		seladdr = `SELADDR_PC;
+		seladdr = 1'bX;
 		casez(state)
 			`START: begin mem_read = 1; seladdr = `SELADDR_PC; end
 			`DECODE:
@@ -127,7 +132,7 @@ module controller
 	// ALU logic
 	always @(*)
 	begin
-		aluinsn = 0;
+		aluinsn = 2'bX;
 		casez(state)
 			`DIVWAIT: aluinsn = 3;
 			`DECODE:
@@ -143,16 +148,17 @@ module controller
 	// PC logic
 	always @(*)
 	begin
-		selpc1 = `SELPC1_NEXT;
+		selpc1 = 1'bX;
+		selpc2 = 1'bX;
 		pc_write = 0;
 		casez(state)
-			`START: begin pc_write = 1; selpc1 = `SELPC1_NEXT; end
+			`START: if (mem_ack) begin pc_write = 1; selpc1 = `SELPC1_NEXT; end
 			`DECODE:
 				casez(insn)
 					`BRANCHZ: if (accz) begin pc_write = 1; selpc1 = `SELPC1_REG; selpc2 = `SELPC2_AR; end
 					`BRANCHN: if (accn) begin pc_write = 1; selpc1 = `SELPC1_REG; selpc2 = `SELPC2_AR; end
 					`JUMP: begin pc_write = 1; selpc1 = `SELPC1_REG; selpc2 = `SELPC2_ACC; end
-					`CONST: begin pc_write = 1; selpc1 = `SELPC1_NEXT; end
+					`CONST: if (mem_ack) begin pc_write = 1; selpc1 = `SELPC1_NEXT; end
 				endcase
 		endcase
 	end
@@ -170,25 +176,7 @@ module controller
 		endcase
 	end
 	
-	// nextstate logic
-/*	always @(*)
-	begin
-		casez(state)
-			`START: if(mem_ack) nextstate = `DECODE; else nextstate = `START;
-			`IOWAIT: if(iobusy) nextstate = `IOWAIT; else if (curinsn == 0) nextstate = `START; else nextstate = `DECODE;
-			`DIVWAIT: if(delay[0] != 0) nextstate = `DIVWAIT; else if (curinsn == 0) nextstate = `START; else nextstate = `DECODE;
-			`DECODE: begin
-				if (curinsn == 3) nextstate = `START;
-				else nextstate = `DECODE;
-				casez(insn)
-					`SYSCALL: nextstate = `IOWAIT;
-					
-				endcase
-			end
-		endcase
-	end*/
-	
-	always @(posedge clock)
+	always @(posedge clock or negedge reset)
 	begin
 		if(~reset) begin
 			state <= 0;
@@ -198,22 +186,23 @@ module controller
 		casez(state)
 			`START: begin
 				curinsn <= 0;
-				if (mem_ack) state <= `DECODE;
+				if(mem_ack) state <= `DECODE; 
 			end
 			`IOWAIT: begin 
 				if(~iobusy) begin
-					if(curinsn == 0) state <= `START;
+					if(curinsn == 2'd0) state <= `START;
 					else state <= `DECODE;
 				end
 			end
 			`DECODE: begin
-				if(curinsn == 3) state <= `START;
+				if(curinsn == 2'd3) state <= `START;
 				else state <= `DECODE;
 				curinsn <= curinsn + 2'b1;
 				casez(insn)
 					`SYSCALL: state <= `IOWAIT;
 					`LOAD: if(~mem_ack) begin curinsn <= curinsn; state <= `DECODE; end
 					`STORE: if(~mem_ack) begin curinsn <= curinsn; state <= `DECODE; end
+					`CONST: if(~mem_ack) begin curinsn <= curinsn; state <= `DECODE; end
 					`BRANCHZ: if(accz) begin curinsn <= 0; state <= `START; end
 					`BRANCHN: if(accn) begin curinsn <= 0; state <= `START; end
 					`JUMP: begin curinsn <= 0; state <= `START; end
@@ -225,7 +214,7 @@ module controller
 			end
 			`DIVWAIT: begin
 				if(delay[0] == 0) begin
-					if(curinsn == 0) state <= `START;
+					if(curinsn == 2'd0) state <= `START;
 					else state <= `DECODE;
 				end else begin
 					delay <= delay >> 1;

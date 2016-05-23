@@ -13,33 +13,37 @@ module iocontroller
 	input [15:0] acc,
 	input ioack,
 	output reg iobusy,
-	output reg io_read,
-	output reg io_write,
-	output reg acc_write
+	output io_read,
+	output io_write,
+	output acc_write
 );
 
 	reg [1:0] state;
 	
-	always @(posedge clock)
+	reg io_read_reg, io_write_reg;
+	
+	assign io_read = runio & ((state == `ST_DECODE) ? acc == `SYSCALL_LOAD : io_read_reg);
+	assign io_write = runio & ((state == `ST_DECODE) ? acc == `SYSCALL_STORE : io_write_reg);
+	assign acc_write = runio & io_read_reg;
+	
+	always @(posedge clock or negedge reset)
 	begin
 		if(~reset) begin
 			iobusy <= 1;
 			state <= `ST_DECODE;
-			io_read <= 0;
-			io_write <= 0;
-			acc_write <= 0;
+			io_read_reg <= 0;
+			io_write_reg <= 0;
 		end else begin
 			case(state)
 				`ST_DECODE: if (runio) begin
 					case(acc)
 						`SYSCALL_HALT: state <= `ST_HALT;
 						`SYSCALL_LOAD: begin
-							io_read <= 1;
-							acc_write <= 1;
+							io_read_reg <= 1;
 							state <= `ST_WAITACK;
 						end
 						`SYSCALL_STORE: begin
-							io_write <= 1;
+							io_write_reg <= 1;
 							state <= `ST_WAITACK;
 						end
 					endcase
@@ -47,9 +51,8 @@ module iocontroller
 				`ST_HALT: state <= `ST_HALT;
 				`ST_WAITACK: begin
 					if (ioack) begin
-						io_read <= 0;
-						io_write <= 0;
-						acc_write <= 0;
+						io_read_reg <= 0;
+						io_write_reg <= 0;
 						iobusy <= 0;
 						state <= `ST_WAITREADY;
 					end

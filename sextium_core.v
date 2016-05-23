@@ -14,7 +14,13 @@ module sextium_core
 	output io_read,
 	output io_write,
 	// for visualization
-	output [3:0] insn
+	output [3:0] insn,
+	output [2:0] state,
+	output [11:0] statebits,
+	output [15:0] disp_acc,
+	output [15:0] disp_ar,
+	output [15:0] disp_dr,
+	output [15:0] disp_pc
 );
 
 	wire acc_write, io_acc_write, ar_write, dr_write, ir_write, pc_write;
@@ -40,6 +46,14 @@ module sextium_core
 	assign accz = acc_out == 16'h0;
 	assign accn = acc_out[15];
 	
+	assign statebits = {acc_write | io_acc_write, ar_write, dr_write, ir_write, pc_write, seladdr, selswap, doswap, 
+		selpc1, selpc2, selacc[0], selacc[1]};
+	
+	assign disp_acc = acc_out;
+	assign disp_ar = ar_out;
+	assign disp_dr = dr_out;
+	assign disp_pc = pc_out;
+	
 	register acc_register(.clock(clock), .reset(reset), .write(io_acc_write | acc_write), .indata(acc_in), .outdata(acc_out));
 	register ar_register(.clock(clock), .reset(reset), .write(ar_write), .indata(ar_in), .outdata(ar_out));
 	register dr_register(.clock(clock), .reset(reset), .write(dr_write), .indata(dr_in), .outdata(dr_out));
@@ -49,7 +63,7 @@ module sextium_core
 	controller sextium_controller(.clock(clock), .reset(reset), .insn(insn), .accz(accz), .accn(accn), .iobusy(iobusy),
 		.mem_read(mem_read), .mem_write(mem_write), .ir_write(ir_write), .pc_write(pc_write), .acc_write(acc_write),
 		.seladdr(seladdr), .selacc(selacc), .selswap(selswap), .doswap(doswap), .selpc1(selpc1), .selpc2(selpc2), 
-		.curinsn(curinsn), .aluinsn(aluinsn), .runio(runio), .diven(diven), .mem_ack(mem_ack));
+		.curinsn(curinsn), .aluinsn(aluinsn), .runio(runio), .diven(diven), .mem_ack(mem_ack), .stateout(state));
 	
 	iocontroller sextium_iocontroller(.clock(clock), .reset(reset), .runio(runio), .acc(acc_out), .ioack(ioack),
 		.iobusy(iobusy), .io_read(io_read), .io_write(io_write), .acc_write(io_acc_write));

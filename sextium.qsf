@@ -753,11 +753,7 @@ set_global_assignment -name MAX_CORE_JUNCTION_TEMP 85
 set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 200 LFPM AIRFLOW"
 set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
 set_global_assignment -name VERILOG_FILE sextium.v
-set_global_assignment -name VERILOG_FILE rs232_uart.v
-set_global_assignment -name VERILOG_FILE altera_up_rs232_counters.v
-set_global_assignment -name VERILOG_FILE altera_up_rs232_out_serializer.v
-set_global_assignment -name VERILOG_FILE altera_up_rs232_in_deserializer.v
-set_global_assignment -name VERILOG_FILE altera_up_sync_fifo.v
+set_global_assignment -name QSYS_FILE sextium_sys.qsys
 set_global_assignment -name SDC_FILE sextium.sdc
 set_global_assignment -name VERILOG_FILE sextium_core.v
 set_global_assignment -name VERILOG_FILE alu.v
@@ -771,12 +767,12 @@ set_global_assignment -name VERILOG_FILE sextium_testbench.v
 set_global_assignment -name VERILOG_FILE simulated_memory.v
 set_global_assignment -name VERILOG_FILE iocontroller.v
 set_global_assignment -name VERILOG_FILE simulated_io.v
-set_global_assignment -name VERILOG_FILE counter.v
-set_global_assignment -name QIP_FILE slowclock.qip
 set_global_assignment -name VERILOG_FILE segment7_hex_decoder.v
 set_global_assignment -name VERILOG_FILE segment7_hex_decoder_x2.v
-set_global_assignment -name VERILOG_FILE sextium_io_uart.v
 set_global_assignment -name VERILOG_FILE segment7_hex_decoder_x4.v
+set_global_assignment -name VERILOG_FILE sextium_avalon_io.v
 set_global_assignment -name VERILOG_FILE sextium_avalon_mem.v
 set_global_assignment -name QIP_FILE divider.qip
+set_global_assignment -name VERILOG_FILE sextium_qsys_testbench.v
+set_global_assignment -name VERILOG_FILE step_clock_gen.v
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
