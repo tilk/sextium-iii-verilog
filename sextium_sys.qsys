@@ -150,6 +150,14 @@
          type = "int";
       }
    }
+   element sextium_ram_avalon
+   {
+      datum _sortIndex
+      {
+         value = "13";
+         type = "int";
+      }
+   }
    element sextium_sys
    {
       datum _originalDeviceFamily
@@ -231,9 +239,10 @@
    internal="sextium_avalon_io.sextium_io"
    type="conduit"
    dir="end" />
+ <interface name="sextium_mem" internal="sextium_avalon_mem.sextium_mem" />
  <interface
-   name="sextium_mem"
-   internal="sextium_avalon_mem.sextium_mem"
+   name="sextium_ram"
+   internal="sextium_ram_avalon.ram"
    type="conduit"
    dir="end" />
  <interface name="slow_clk" internal="slowclk.clk_in" type="clock" dir="end" />
@@ -347,7 +356,7 @@
    name="onchip_memory"
    kind="altera_avalon_onchip_memory2"
    version="15.0"
-   enabled="1">
+   enabled="0">
   <parameter name="allowInSystemMemoryContentEditor" value="false" />
   <parameter name="autoInitializationFileName">sextium_sys_onchip_memory</parameter>
   <parameter name="blockType" value="AUTO" />
@@ -384,6 +393,11 @@
    name="sextium_avalon_mem"
    kind="sextium_avalon_mem"
    version="1.1"
+   enabled="0" />
+ <module
+   name="sextium_ram_avalon"
+   kind="sextium_ram_avalon"
+   version="1.0"
    enabled="1" />
  <module name="slowclk" kind="clock_source" version="15.0" enabled="1">
   <parameter name="clockFrequency" value="50000000" />
@@ -602,6 +616,15 @@
    kind="avalon"
    version="15.0"
    start="jtag_master.master"
+   end="sextium_ram_avalon.slave">
+  <parameter name="arbitrationPriority" value="1" />
+  <parameter name="baseAddress" value="0x0000" />
+  <parameter name="defaultConnection" value="false" />
+ </connection>
+ <connection
+   kind="avalon"
+   version="15.0"
+   start="jtag_master.master"
    end="sram_controller.uas">
   <parameter name="arbitrationPriority" value="1" />
   <parameter name="baseAddress" value="0x0000" />
@@ -624,6 +647,11 @@
    version="15.0"
    start="slowclk.clk"
    end="sextium_avalon_io.clock" />
+ <connection
+   kind="clock"
+   version="15.0"
+   start="clk.clk"
+   end="sextium_ram_avalon.clock" />
  <connection
    kind="clock"
    version="15.0"
@@ -667,6 +695,11 @@
    version="15.0"
    start="clk.clk_reset"
    end="sram_bridge.reset" />
+ <connection
+   kind="reset"
+   version="15.0"
+   start="clk.clk_reset"
+   end="sextium_ram_avalon.reset" />
  <connection
    kind="reset"
    version="15.0"

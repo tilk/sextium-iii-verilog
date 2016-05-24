@@ -111,37 +111,28 @@ module sextium(
 //=======================================================
 
 	wire clock, reset;
+	wire selclock, stepclock;
 	wire mem_read, mem_write, mem_ack, io_read, io_write, io_mem_write, io_ack;
 	wire [15:0] mem_bus_in, mem_bus_out, io_bus_in, io_bus_out, addr_bus;
 	wire [3:0] insn;
 	wire [2:0] state;
-	wire [20:0] tcm_address_out;
 	wire [15:0] dispval, dispreg;
 	wire [15:0] dispregs[3:0];
 	wire [6:0] disp7reg1, disp7reg2;
-//	wire slowclock;
-//	wire soft_reset;
 
-	wire to_uart_data, to_uart_error, to_uart_valid, to_uart_ready, from_uart_data, from_uart_error, from_uart_valid,	from_uart_ready;
-
+	wire ram_clock, ram_clocken, ram_wren;
+	wire [15:0] ram_address, ram_data, ram_q;
+	wire [1:0] ram_byteena;
+	
+	reg [17:0] sw_syn;
 	
 //=======================================================
 //  Structural coding
 //=======================================================
 
-//	assign clock = CLOCK_50;
 	assign reset = KEY[0];
-	assign selclock = SW[17];
-	assign SRAM_CE_N = 0;
-	assign SRAM_ADDR = tcm_address_out[20:1];
-/*
-	assign SRAM_LB_N = 0;
-	assign SRAM_UB_N = 0;
-	assign SRAM_OE_N = ~mem_read;
-	assign SRAM_WE_N = ~(mem_write | io_mem_write);
-	assign SRAM_DQ = mem_write ? (io_mem_write ? io_bus_out : mem_bus_out) : 16'bZ; // TODO an actual memory controller is needed
-	assign SRAM_ADDR[15:0] = addr_bus;
-	assign SRAM_ADDR[19:16] = 0; */
+	assign selclock = sw_syn[17];
+
 	assign LEDG[0] = clock;
 	assign LEDG[2] = mem_ack;
 	assign LEDG[3] = mem_read;
@@ -150,8 +141,11 @@ module sextium(
 	assign LEDG[6] = io_read;
 	assign LEDG[7] = io_write;
 
-//	assign mem_bus_in = SRAM_DQ;
-
+	always @(posedge CLOCK_50)
+	begin
+		sw_syn <= SW;
+	end
+	
 	sextium_core core(.clock(clock), .reset(reset), .mem_bus_in(mem_bus_in), .mem_bus_out(mem_bus_out), .addr_bus(addr_bus),
 		.io_bus_in(io_bus_in), .io_bus_out(io_bus_out),
 		.mem_read(mem_read), .mem_write(mem_write), .mem_ack(mem_ack),
@@ -159,17 +153,6 @@ module sextium(
 		.insn(insn), .state(state), .statebits(LEDR[11:0]), 
 		.disp_acc(dispregs[0]), .disp_ar(dispregs[1]), .disp_dr(dispregs[2]), .disp_pc(dispregs[3]));
 	
-//	sextium_io_uart io_uart(.clock(clock), .reset(reset), .io_bus_in(io_bus_out), .io_bus_out(io_bus_in), .io_read(io_read), .io_write(io_write), .ioack(ioack),
-//		.from_uart_ready(from_uart_ready), .to_uart_data(to_uart_data), .to_uart_error(to_uart_error), .to_uart_valid(to_uart_valid),
-//		.to_uart_ready(to_uart_ready), .from_uart_data(from_uart_data), .from_uart_error(from_uart_error), .from_uart_valid(from_uart_valid),
-//		.soft_reset(soft_reset), .io_mem_write(io_mem_write));
-	
-//	slowclock clockgen(.areset(1), .inclk0(CLOCK_50), .c0(slowclock));
-
-//	rs232_uart uart(.clk(CLOCK_50), .reset(reset), .UART_RXD(UART_RXD), .UART_TXD(UART_TXD),
-//		.from_uart_ready(from_uart_ready), .to_uart_data(to_uart_data), .to_uart_error(to_uart_error), .to_uart_valid(to_uart_valid),
-//		.to_uart_ready(to_uart_ready), .from_uart_data(from_uart_data), .from_uart_error(from_uart_error), .from_uart_valid(from_uart_valid));
-
 	mux2#(16) dispmux(.sel(SW[0]), .in1(addr_bus), .in2(dispreg), .out(dispval));
 	mux4#(16) dispregmux(.sel({SW[1], SW[2]}), .in1(dispregs[0]), .in2(dispregs[1]), .in3(dispregs[2]), .in4(dispregs[3]), .out(dispreg));
 	
@@ -187,6 +170,13 @@ module sextium(
 	
 	step_clock_gen scgen(.clock(CLOCK_50), .pushbtn(~KEY[1]), .stepclock(stepclock));
 	
+	sextium_ram_controller ramctl(.clock(clock), .reset(reset),
+		.addr_bus(addr_bus), .mem_bus_in(mem_bus_in),
+		.mem_bus_out(mem_bus_out), .mem_read(mem_read), .mem_write(mem_write), .mem_ack(mem_ack),
+		.clock_b(ram_clock), .enable_b(ram_clocken), .address_b(ram_address), 
+		.byteena_b(ram_byteena), .data_b(ram_data), .q_b(ram_q), .wren_b(ram_wren)
+		);
+	
 	sextium_sys sys
 	(
 		.character_lcd_DATA(LCD_DATA),
@@ -195,12 +185,20 @@ module sextium(
 		.character_lcd_EN(LCD_EN),
 		.character_lcd_RS(LCD_RS),
 		.character_lcd_RW(LCD_RW),
-		.sextium_mem_addr_bus(addr_bus),
+		.sextium_ram_address(ram_address),
+		.sextium_ram_byteena(ram_byteena),
+		.sextium_ram_clock(ram_clock),
+		.sextium_ram_clocken(ram_clocken),
+		.sextium_ram_data(ram_data),
+		.sextium_ram_q(ram_q),
+		.sextium_ram_wren(ram_wren),
+
+/*		.sextium_mem_addr_bus(addr_bus),
 		.sextium_mem_mem_bus_in(mem_bus_in),
 		.sextium_mem_mem_bus_out(mem_bus_out),
 		.sextium_mem_mem_read(mem_read),
 		.sextium_mem_mem_write(mem_write),
-		.sextium_mem_mem_ack(mem_ack),
+		.sextium_mem_mem_ack(mem_ack),*/
 		.sextium_io_io_bus_in(io_bus_in),
 		.sextium_io_io_bus_out(io_bus_out),
 		.sextium_io_io_read(io_read),
