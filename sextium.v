@@ -100,6 +100,16 @@ module sextium(
 	output		          		FL_WE_N,
 	output		          		FL_WP_N,
 
+	// VGA
+	output		     [7:0]		VGA_R,
+	output		     [7:0]		VGA_G,
+	output		     [7:0]		VGA_B,
+	output                     VGA_CLK,
+	output                     VGA_BLANK_N,
+	output                     VGA_HS,
+	output                     VGA_VS,
+	output                     VGA_SYNC_N,
+	
 	//////////// GPIO, GPIO connect to GPIO Default //////////
 	inout 		    [35:0]		GPIO
 );
@@ -112,8 +122,8 @@ module sextium(
 
 	wire clock, reset;
 	wire selclock, stepclock;
-	wire mem_read, mem_write, mem_ack, io_read, io_write, io_mem_write, io_ack;
-	wire [15:0] mem_bus_in, mem_bus_out, io_bus_in, io_bus_out, addr_bus;
+	wire mem_read, mem_write, mem_ack, frame_read, frame_write, frame_ack, io_read, io_write, io_mem_write, io_ack;
+	wire [15:0] mem_bus_in, mem_bus_out, frame_bus_in, frame_bus_out, frame_addr_bus, io_bus_in, io_bus_out, addr_bus;
 	wire [3:0] insn;
 	wire [2:0] state;
 	wire [15:0] dispval, dispreg;
@@ -123,6 +133,9 @@ module sextium(
 	wire ram_clock, ram_clocken, ram_wren;
 	wire [15:0] ram_address, ram_data, ram_q;
 	wire [1:0] ram_byteena;
+	wire frame_clock, frame_clocken, frame_wren;
+	wire [15:0] frame_address, frame_data, frame_q;
+	wire [1:0] frame_byteena;
 	
 	reg [17:0] sw_syn;
 	
@@ -150,6 +163,8 @@ module sextium(
 		.io_bus_in(io_bus_in), .io_bus_out(io_bus_out),
 		.mem_read(mem_read), .mem_write(mem_write), .mem_ack(mem_ack),
 		.io_read(io_read), .io_write(io_write), .ioack(io_ack),
+		.frame_read(frame_read), .frame_write(frame_write), .frame_ack(frame_ack),
+		.frame_bus_in(frame_bus_in), .frame_bus_out(frame_bus_out), .frame_addr_bus(frame_addr_bus),
 		.insn(insn), .state(state), .statebits(LEDR[11:0]), 
 		.disp_acc(dispregs[0]), .disp_ar(dispregs[1]), .disp_dr(dispregs[2]), .disp_pc(dispregs[3]));
 	
@@ -176,6 +191,14 @@ module sextium(
 		.clock_b(ram_clock), .enable_b(ram_clocken), .address_b(ram_address), 
 		.byteena_b(ram_byteena), .data_b(ram_data), .q_b(ram_q), .wren_b(ram_wren)
 		);
+
+	sextium_ram_controller framectl(.clock(clock), .reset(reset),
+		.addr_bus(frame_addr_bus), .mem_bus_in(frame_bus_in),
+		.mem_bus_out(frame_bus_out), .mem_read(frame_read), .mem_write(frame_write), 
+		.mem_ack(frame_ack),
+		.clock_b(frame_clock), .enable_b(frame_clocken), .address_b(frame_address), 
+		.byteena_b(frame_byteena), .data_b(frame_data), .q_b(frame_q), .wren_b(frame_wren)
+		);
 	
 	sextium_sys sys
 	(
@@ -192,7 +215,21 @@ module sextium(
 		.sextium_ram_data(ram_data),
 		.sextium_ram_q(ram_q),
 		.sextium_ram_wren(ram_wren),
-
+		.sextium_framebuffer_address(frame_address),
+		.sextium_framebuffer_byteena(frame_byteena),
+		.sextium_framebuffer_clock(frame_clock),
+		.sextium_framebuffer_clocken(frame_clocken),
+		.sextium_framebuffer_data(frame_data),
+		.sextium_framebuffer_q(frame_q),
+		.sextium_framebuffer_wren(frame_wren),
+		.vga_CLK(VGA_CLK),
+		.vga_HS(VGA_HS),
+		.vga_VS(VGA_VS),
+		.vga_BLANK(VGA_BLANK_N),
+		.vga_SYNC(VGA_SYNC_N),
+		.vga_R(VGA_R),
+		.vga_G(VGA_G),
+		.vga_B(VGA_B),
 /*		.sextium_mem_addr_bus(addr_bus),
 		.sextium_mem_mem_bus_in(mem_bus_in),
 		.sextium_mem_mem_bus_out(mem_bus_out),
