@@ -28,10 +28,10 @@ proc load_program fname {
 
 proc io_write val { 
 	global master
-	master_write_16 $master 0x00300010 $val
+	master_write_16 $master 0x00021010 $val
 }
 
 proc io_read {} { 
 	global master
-	return [master_read_16 $master 0x00400010 1] 
+	return [master_read_16 $master 0x00022010 1] 
 }

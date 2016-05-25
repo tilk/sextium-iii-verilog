@@ -29,7 +29,7 @@
    {
       datum baseAddress
       {
-         value = "6291456";
+         value = "147456";
          type = "String";
       }
    }
@@ -53,7 +53,7 @@
    {
       datum baseAddress
       {
-         value = "2097152";
+         value = "131072";
          type = "String";
       }
    }
@@ -77,7 +77,7 @@
    {
       datum baseAddress
       {
-         value = "3145744";
+         value = "135184";
          type = "String";
       }
    }
@@ -85,7 +85,7 @@
    {
       datum baseAddress
       {
-         value = "3145760";
+         value = "135200";
          type = "String";
       }
    }
@@ -93,7 +93,7 @@
    {
       datum baseAddress
       {
-         value = "3145728";
+         value = "135168";
          type = "String";
       }
    }
@@ -109,7 +109,7 @@
    {
       datum baseAddress
       {
-         value = "4194304";
+         value = "139264";
          type = "String";
       }
    }
@@ -117,7 +117,7 @@
    {
       datum baseAddress
       {
-         value = "4194336";
+         value = "139296";
          type = "String";
       }
    }
@@ -125,7 +125,7 @@
    {
       datum baseAddress
       {
-         value = "4194320";
+         value = "139280";
          type = "String";
       }
    }
@@ -258,7 +258,7 @@
    {
       datum baseAddress
       {
-         value = "5242880";
+         value = "143360";
          type = "String";
       }
    }
@@ -542,7 +542,7 @@
   <parameter name="RESPONSE_FIFO_DEPTH" value="4" />
   <parameter name="SLAVE_SYNC_DEPTH" value="2" />
   <parameter name="SYMBOL_WIDTH" value="8" />
-  <parameter name="SYSINFO_ADDR_WIDTH" value="23" />
+  <parameter name="SYSINFO_ADDR_WIDTH" value="18" />
   <parameter name="USE_AUTO_ADDRESS_WIDTH" value="0" />
  </module>
  <module
@@ -658,8 +658,8 @@
    kind="sextium_avalon_io"
    version="1.0"
    enabled="1">
-  <parameter name="READ_FIFO_ADDR" value="3145728" />
-  <parameter name="WRITE_FIFO_ADDR" value="4194304" />
+  <parameter name="READ_FIFO_ADDR" value="135168" />
+  <parameter name="WRITE_FIFO_ADDR" value="139264" />
  </module>
  <module
    name="sextium_avalon_mem"
@@ -876,7 +876,7 @@
    start="bridge.m0"
    end="video_pixel_buffer_dma.avalon_control_slave">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x00500000" />
+  <parameter name="baseAddress" value="0x00023000" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -890,12 +890,12 @@
  </connection>
  <connection kind="avalon" version="15.0" start="bridge.m0" end="io_fifo_write.in">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x00400000" />
+  <parameter name="baseAddress" value="0x00022000" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection kind="avalon" version="15.0" start="bridge.m0" end="io_fifo_read.out">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x00300000" />
+  <parameter name="baseAddress" value="0x00021000" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection kind="avalon" version="15.0" start="bridge.m0" end="onchip_memory.s1">
@@ -918,7 +918,7 @@
    start="jtag_master.master"
    end="video_pixel_buffer_dma.avalon_control_slave">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x00500000" />
+  <parameter name="baseAddress" value="0x00023000" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -927,7 +927,7 @@
    start="jtag_master.master"
    end="character_lcd.avalon_lcd_slave">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x00200000" />
+  <parameter name="baseAddress" value="0x00020000" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -945,7 +945,7 @@
    start="jtag_master.master"
    end="io_fifo_read.in">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x00300010" />
+  <parameter name="baseAddress" value="0x00021010" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -954,7 +954,7 @@
    start="jtag_master.master"
    end="io_fifo_write.in">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x00400000" />
+  <parameter name="baseAddress" value="0x00022000" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -963,7 +963,7 @@
    start="jtag_master.master"
    end="io_fifo_read.in_csr">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x00300020" />
+  <parameter name="baseAddress" value="0x00021020" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -972,7 +972,7 @@
    start="jtag_master.master"
    end="io_fifo_write.in_csr">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x00400020" />
+  <parameter name="baseAddress" value="0x00022020" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -981,7 +981,7 @@
    start="jtag_master.master"
    end="io_fifo_write.out">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x00400010" />
+  <parameter name="baseAddress" value="0x00022010" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -990,7 +990,7 @@
    start="jtag_master.master"
    end="io_fifo_read.out">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x00300000" />
+  <parameter name="baseAddress" value="0x00021000" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -999,7 +999,7 @@
    start="jtag_master.master"
    end="altpll.pll_slave">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x00600000" />
+  <parameter name="baseAddress" value="0x00024000" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
