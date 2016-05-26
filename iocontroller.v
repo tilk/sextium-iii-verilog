@@ -1,7 +1,6 @@
 `define ST_DECODE 0
 `define ST_HALT 1
-`define ST_WAITACK 2
-`define ST_WAITREADY 3
+`define ST_WAITREADY 2
 `define SYSCALL_HALT 0
 `define SYSCALL_LOAD 1
 `define SYSCALL_STORE 2
@@ -23,56 +22,38 @@ module iocontroller
 
 	reg [1:0] state;
 	
-	reg io_read_reg, io_write_reg, selframe_reg;
+	reg [15:0] acc_copy;
+	reg next;
 	
-	assign io_read = runio & ((state == `ST_DECODE) ? acc == `SYSCALL_LOAD : io_read_reg);
-	assign io_write = runio & ((state == `ST_DECODE) ? acc == `SYSCALL_STORE : io_write_reg);
-	assign acc_write = runio & io_read_reg;
-	assign selframe = (state == `ST_DECODE) ? acc == `SYSCALL_FRAME_GET | acc == `SYSCALL_FRAME_PUT : selframe_reg;
+	wire [15:0] syscall;
+	
+	assign syscall = next ? acc_copy : acc;
+	assign io_read = runio & state == `ST_DECODE & (syscall == `SYSCALL_LOAD | syscall == `SYSCALL_FRAME_GET);
+	assign io_write = runio & state == `ST_DECODE & (syscall == `SYSCALL_STORE | syscall == `SYSCALL_FRAME_PUT);
+	assign acc_write = io_read;
+	assign selframe = syscall == `SYSCALL_FRAME_GET | syscall == `SYSCALL_FRAME_PUT;
 	
 	always @(posedge clock or negedge reset)
 	begin
 		if(~reset) begin
 			iobusy <= 1;
 			state <= `ST_DECODE;
-			io_read_reg <= 0;
-			io_write_reg <= 0;
-			selframe_reg <= 0;
+			next <= 0;
 		end else begin
 			case(state)
 				`ST_DECODE: if (runio) begin
-					case(acc)
+					next <= 1;
+					if (~next) acc_copy <= acc;
+					case(syscall)
 						`SYSCALL_HALT: state <= `ST_HALT;
-						`SYSCALL_LOAD: begin
-							io_read_reg <= 1;
-							state <= `ST_WAITACK;
-						end
-						`SYSCALL_STORE: begin
-							io_write_reg <= 1;
-							state <= `ST_WAITACK;
-						end
-						`SYSCALL_FRAME_GET: begin
-							io_read_reg <= 1;
-							selframe_reg <= 1;
-							state <= `ST_WAITACK;
-						end
-						`SYSCALL_FRAME_PUT: begin
-							io_write_reg <= 1;
-							selframe_reg <= 1;
-							state <= `ST_WAITACK;
+						default: if (ioack) begin
+							iobusy <= 0;
+							next <= 0;
+							state <= `ST_WAITREADY;
 						end
 					endcase
 				end
 				`ST_HALT: state <= `ST_HALT;
-				`ST_WAITACK: begin
-					if (ioack) begin
-						io_read_reg <= 0;
-						io_write_reg <= 0;
-						selframe_reg <= 0;
-						iobusy <= 0;
-						state <= `ST_WAITREADY;
-					end
-				end
 				`ST_WAITREADY: begin
 					iobusy <= 1;
 					if (~ioack) state <= `ST_DECODE;

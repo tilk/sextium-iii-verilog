@@ -165,7 +165,7 @@ module sextium(
 		.io_read(io_read), .io_write(io_write), .ioack(io_ack),
 		.frame_read(frame_read), .frame_write(frame_write), .frame_ack(frame_ack),
 		.frame_bus_in(frame_bus_in), .frame_bus_out(frame_bus_out), .frame_addr_bus(frame_addr_bus),
-		.insn(insn), .state(state), .statebits(LEDR[11:0]), 
+		.insn(insn), .state(state), .statebits(LEDR[13:0]), 
 		.disp_acc(dispregs[0]), .disp_ar(dispregs[1]), .disp_dr(dispregs[2]), .disp_pc(dispregs[3]));
 	
 	mux2#(16) dispmux(.sel(SW[0]), .in1(addr_bus), .in2(dispreg), .out(dispval));

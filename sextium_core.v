@@ -22,7 +22,7 @@ module sextium_core
 	// for visualization
 	output [3:0] insn,
 	output [2:0] state,
-	output [11:0] statebits,
+	output [13:0] statebits,
 	output [15:0] disp_acc,
 	output [15:0] disp_ar,
 	output [15:0] disp_dr,
@@ -55,7 +55,7 @@ module sextium_core
 	assign accz = acc_out == 16'h0;
 	assign accn = acc_out[15];
 	
-	assign statebits = {acc_write | io_acc_write, ar_write, dr_write, ir_write, pc_write, seladdr, selswap, doswap, 
+	assign statebits = {runio, iobusy, acc_write | io_acc_write, ar_write, dr_write, ir_write, pc_write, seladdr, selswap, doswap, 
 		selpc1, selpc2, selacc[0], selacc[1]};
 	
 	assign disp_acc = acc_out;

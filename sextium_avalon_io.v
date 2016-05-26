@@ -9,10 +9,11 @@ module sextium_avalon_io
 	
 	output [31:0] address,
 	output read,
-	input [15:0] readdata,
+	input [31:0] readdata,
 	input waitrequest,
 	output write,
-	output [15:0] writedata,
+	output [31:0] writedata,
+	output [3:0] byteenable,
 	
 	output [15:0] io_bus_in,
 	input [15:0] io_bus_out,
@@ -22,6 +23,8 @@ module sextium_avalon_io
 );
 
 	assign address = io_read ? READ_FIFO_ADDR : WRITE_FIFO_ADDR;
+	
+	assign byteenable = 4'b0011;
 	
 	assign read = io_read;
 	assign write = io_write;

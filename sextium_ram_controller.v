@@ -16,6 +16,8 @@ module sextium_ram_controller(
 	input [1:0] byteena_b
 );
 
+	initial mem_ack = 0;
+
 	always @(posedge clock or negedge reset) 
 	begin
 		if (~reset) mem_ack <= 0;
