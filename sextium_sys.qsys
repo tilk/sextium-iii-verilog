@@ -536,7 +536,7 @@
   <parameter name="AUTO_M0_CLK_CLOCK_RATE" value="50000000" />
   <parameter name="AUTO_S0_CLK_CLOCK_RATE" value="50000000" />
   <parameter name="COMMAND_FIFO_DEPTH" value="4" />
-  <parameter name="DATA_WIDTH" value="16" />
+  <parameter name="DATA_WIDTH" value="32" />
   <parameter name="MASTER_SYNC_DEPTH" value="2" />
   <parameter name="MAX_BURST_SIZE" value="1" />
   <parameter name="RESPONSE_FIFO_DEPTH" value="4" />

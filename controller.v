@@ -18,6 +18,8 @@
 `define SUB 4'd11
 `define MUL 4'd12
 `define DIV 4'd13
+`define SHIFT 4'd14
+`define NAND 4'd15
 // constants for multiplexing
 `define SELADDR_PC 0
 `define SELADDR_AR 1
@@ -52,7 +54,7 @@ module controller
 	output reg selpc1, // 0 - next, 1 - reg
 	output reg selpc2, // 0 - DR, 1 - ACC
 	output reg [1:0] curinsn,
-	output reg [1:0] aluinsn,
+	output reg [2:0] aluinsn,
 	output reg runio,
 	output reg diven,
 	// for visualization
@@ -141,6 +143,8 @@ module controller
 					`SUB: aluinsn = 1;
 					`MUL: aluinsn = 2;
 					`DIV: aluinsn = 3;
+					`SHIFT: aluinsn = 4;
+					`NAND: aluinsn = 5;
 				endcase
 		endcase
 	end

@@ -39,7 +39,7 @@ module sextium_core
 	wire seladdr, selswap, doswap, selpc1, selpc2, selframe;
 	wire [1:0] selacc;
 	wire [1:0] curinsn;
-	wire [1:0] aluinsn;
+	wire [2:0] aluinsn;
 	wire diven;
 	
 	assign ar_in = acc_out;
