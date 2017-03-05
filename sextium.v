@@ -122,7 +122,8 @@ module sextium(
 
 	wire clock, reset;
 	wire selclock, stepclock;
-	wire mem_read, mem_write, mem_ack, frame_read, frame_write, frame_ack, io_read, io_write, io_mem_write, io_ack;
+   wire khzclock, spdclock;
+	wire mem_read, mem_write, mem_ack, frame_read, frame_write, frame_ack, io_read, io_write, io_mem_write, io_ack, io_use_addr;
 	wire [15:0] mem_bus_in, mem_bus_out, frame_bus_in, frame_bus_out, frame_addr_bus, io_bus_in, io_bus_out, addr_bus;
 	wire [3:0] insn;
 	wire [2:0] state;
@@ -162,9 +163,9 @@ module sextium(
 	sextium_core core(.clock(clock), .reset(reset), .mem_bus_in(mem_bus_in), .mem_bus_out(mem_bus_out), .addr_bus(addr_bus),
 		.io_bus_in(io_bus_in), .io_bus_out(io_bus_out),
 		.mem_read(mem_read), .mem_write(mem_write), .mem_ack(mem_ack),
-		.io_read(io_read), .io_write(io_write), .ioack(io_ack),
+		.io_read(io_read), .io_write(io_write), .ioack(io_ack), .io_use_addr(io_use_addr),
 		.frame_read(frame_read), .frame_write(frame_write), .frame_ack(frame_ack),
-		.frame_bus_in(frame_bus_in), .frame_bus_out(frame_bus_out), .frame_addr_bus(frame_addr_bus),
+		.frame_bus_in(frame_bus_in), .frame_bus_out(frame_bus_out),
 		.insn(insn), .state(state), .statebits(LEDR[13:0]), 
 		.disp_acc(dispregs[0]), .disp_ar(dispregs[1]), .disp_dr(dispregs[2]), .disp_pc(dispregs[3]));
 	
@@ -181,7 +182,8 @@ module sextium(
 	
 	segment7_hex_decoder_x4 addr_s7(.oe(1), .hex(dispval), .out1(HEX0), .out2(HEX1), .out3(HEX2), .out4(HEX3));
 
-	mux2#(1) clockmux(.sel(selclock), .in1(CLOCK_50), .in2(stepclock), .out(clock));
+	mux2#(1) clockspdmux(.sel(sw_syn[16]), .in1(CLOCK_50), .in2(khzclock), .out(spdclock));
+	mux2#(1) clockmux(.sel(selclock), .in1(spdclock), .in2(stepclock), .out(clock));
 	
 	step_clock_gen scgen(.clock(CLOCK_50), .pushbtn(~KEY[1]), .stepclock(stepclock));
 	
@@ -193,7 +195,7 @@ module sextium(
 		);
 
 	sextium_ram_controller framectl(.clock(clock), .reset(reset),
-		.addr_bus(frame_addr_bus), .mem_bus_in(frame_bus_in),
+		.addr_bus(addr_bus), .mem_bus_in(frame_bus_in),
 		.mem_bus_out(frame_bus_out), .mem_read(frame_read), .mem_write(frame_write), 
 		.mem_ack(frame_ack),
 		.clock_b(frame_clock), .enable_b(frame_clocken), .address_b(frame_address), 
@@ -241,6 +243,8 @@ module sextium(
 		.sextium_io_io_read(io_read),
 		.sextium_io_io_write(io_write),
 		.sextium_io_io_ack(io_ack),
+		.sextium_io_io_addr(addr_bus),
+		.sextium_io_io_use_addr(io_use_addr),
 /*		.sram_SRAM_DQ(SRAM_DQ),
 		.sram_SRAM_ADDR(SRAM_ADDR),
 		.sram_SRAM_LB_N(SRAM_LB_N),
@@ -257,7 +261,8 @@ module sextium(
 		.clk_clk(CLOCK_50),
 		.reset_reset_n(reset),
 		.slow_clk_clk(clock),
-		.slow_reset_reset_n(reset)
+		.slow_reset_reset_n(reset),
+		.altpll_c1_clk(khzclock)
 	);
 	
 endmodule

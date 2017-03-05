@@ -6,6 +6,8 @@
 `define SYSCALL_STORE 2
 `define SYSCALL_FRAME_GET 3
 `define SYSCALL_FRAME_PUT 4
+`define SYSCALL_IO_GET 5
+`define SYSCALL_IO_PUT 6
 module iocontroller
 (
 	input clock,
@@ -16,6 +18,7 @@ module iocontroller
 	output reg iobusy,
 	output io_read,
 	output io_write,
+	output io_use_addr,
 	output acc_write,
 	output selframe
 );
@@ -28,8 +31,9 @@ module iocontroller
 	wire [15:0] syscall;
 	
 	assign syscall = next ? acc_copy : acc;
-	assign io_read = runio & state == `ST_DECODE & (syscall == `SYSCALL_LOAD | syscall == `SYSCALL_FRAME_GET);
-	assign io_write = runio & state == `ST_DECODE & (syscall == `SYSCALL_STORE | syscall == `SYSCALL_FRAME_PUT);
+	assign io_read = runio & state == `ST_DECODE & (syscall == `SYSCALL_LOAD | syscall == `SYSCALL_FRAME_GET | syscall == `SYSCALL_IO_GET);
+	assign io_write = runio & state == `ST_DECODE & (syscall == `SYSCALL_STORE | syscall == `SYSCALL_FRAME_PUT | syscall == `SYSCALL_IO_PUT);
+	assign io_use_addr = runio & state == `ST_DECODE & (syscall == `SYSCALL_IO_GET | syscall == `SYSCALL_IO_PUT);
 	assign acc_write = io_read;
 	assign selframe = syscall == `SYSCALL_FRAME_GET | syscall == `SYSCALL_FRAME_PUT;
 	

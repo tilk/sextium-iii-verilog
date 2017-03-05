@@ -87,6 +87,8 @@ module controller
 					`SUB: begin selacc = `SELACC_ALU; acc_write = 1; end
 					`MUL: begin selacc = `SELACC_ALU; acc_write = 1; end
 					`DIV: selacc = `SELACC_ALU;
+					`SHIFT: begin selacc = `SELACC_ALU; acc_write = 1; end
+					`NAND: begin selacc = `SELACC_ALU; acc_write = 1; end
 				endcase
 		endcase
 	end
@@ -125,8 +127,9 @@ module controller
 			`DECODE:
 				casez(insn)
 					`LOAD: begin mem_read = 1; seladdr = `SELADDR_AR; end
-					`STORE: begin mem_write <= 1; seladdr <= `SELADDR_AR; end
+					`STORE: begin mem_write = 1; seladdr = `SELADDR_AR; end
 					`CONST: begin mem_read = 1; seladdr = `SELADDR_PC; end
+					`SYSCALL: seladdr = `SELADDR_AR;
 				endcase
 		endcase
 	end

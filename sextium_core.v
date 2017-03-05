@@ -12,13 +12,13 @@ module sextium_core
    output [15:0] mem_bus_out,
    output [15:0] frame_bus_out,
    output [15:0] addr_bus,
-   output [15:0] frame_addr_bus,
 	output mem_read,
 	output mem_write,
 	output frame_read,
 	output frame_write,
 	output io_read,
 	output io_write,
+	output io_use_addr,
 	// for visualization
 	output [3:0] insn,
 	output [2:0] state,
@@ -63,7 +63,6 @@ module sextium_core
 	assign disp_dr = dr_out;
 	assign disp_pc = pc_out;
 	
-	assign frame_addr_bus = ar_out;
 	assign io_read = ioframe_read & ~selframe;
 	assign io_write = ioframe_write & ~selframe;
 	assign frame_read = ioframe_read & selframe;
@@ -82,6 +81,7 @@ module sextium_core
 	
 	iocontroller sextium_iocontroller(.clock(clock), .reset(reset), .runio(runio), .acc(acc_out), .ioack(ioack | frame_ack),
 		.iobusy(iobusy), .io_read(ioframe_read), .io_write(ioframe_write), .acc_write(io_acc_write),
+		.io_use_addr(io_use_addr),
 		.selframe(selframe));
 	
 	mux16to4 insn_mux(.in(ir_out), .sel(curinsn), .out(insn));
