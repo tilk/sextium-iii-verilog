@@ -21,7 +21,7 @@ module sextium_core
 	output io_use_addr,
 	// for visualization
 	output [3:0] insn,
-	output [2:0] state,
+	output [1:0] state,
 	output [13:0] statebits,
 	output [15:0] disp_acc,
 	output [15:0] disp_ar,

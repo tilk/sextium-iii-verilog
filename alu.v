@@ -11,7 +11,12 @@ module alu
 
 	wire [WIDTH-1:0] qu, re;
 
+`ifdef IVERILOG
+    assign qu = datab / dataa;
+    assign re = datab % dataa;
+`else
 	divider divcircuit(.clock(clock), .clken(diven), .numer(datab), .denom(dataa), .quotient(qu), .remain(re));
+`endif
 
 	always @(*)
 	begin

@@ -1,10 +1,12 @@
 module simulated_io
 (
+    input clock,
 	input reset,
 	input io_read,
 	input io_write,
 	output ioack,
-	inout [15:0] data
+	output [15:0] data_in,
+	input [15:0] data_out
 );
 
 	reg [15:0] inputs[65535:0];
@@ -12,27 +14,30 @@ module simulated_io
 	
 	reg [15:0] inaddr, outaddr;
 
-	assign data = (io_read) ? inputs[inaddr] : 16'bZ;
+    reg prev_io_read, prev_io_write;
+
+	assign data_in = (io_read) ? inputs[inaddr] : 16'bx;
 	assign ioack = io_read | io_write;
 	
 	initial begin
-		inaddr <= 0;
-		outaddr <= 0;
 		$readmemh("test2in.txt", inputs);
 	end
+
+    always @(posedge clock) begin
+        prev_io_read <= io_read;
+        prev_io_write <= io_write;
+    end
+
+	always @(posedge clock)
+        if (~reset) inaddr <= 16'b0;
+        else if (!io_read && prev_io_read)
+            inaddr <= inaddr + 1;
 	
-	always @(negedge io_read)
-	begin
-		if (reset) inaddr <= inaddr + 1;
-	end
-	
-	always @(posedge io_write or negedge io_write)
-	begin
-		if (reset)
-		if (io_write) begin
-			outputs[outaddr] <= data;
-		end 
-		else outaddr <= outaddr + 1;
-	end
-	
+	always @(posedge clock)
+        if (~reset) outaddr <= 16'b0;
+		else if (io_write && !prev_io_write) begin
+			outputs[outaddr] <= data_out;
+            outaddr <= outaddr + 1;
+        end
+
 endmodule

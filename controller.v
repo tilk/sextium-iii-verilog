@@ -96,7 +96,7 @@ module controller
 	// swap logic
 	always @(*)
 	begin
-		selswap = 1'bX;
+		selswap = 1'b0;
 		doswap = 0;
 		casez(state)
 			`DECODE:
